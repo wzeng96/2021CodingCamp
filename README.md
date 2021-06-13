@@ -32,6 +32,7 @@ _Important note_: these projects are offered as examples and are particularly us
 ### Working Environment:
 We will rely on GitHub and Slack for communication throughout this course.  
 Our GitHub site is: https://github.com/ncats/2021CodingCamp
+Our Slack Channel is on the NCATS instance and is called: 2021_summercodingcamp
 
 Instructions on how to communicate via GitHub and Slack will be provided in the introductory lectures.
 
