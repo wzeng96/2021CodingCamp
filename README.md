@@ -7,9 +7,9 @@ At the end of this course, participants will have been introduced to GitHub and 
 
 ## Course logistics
 ### The Basics:
-The camp will last 8 weeks
+The camp will last 8 weeks and we will meet weekly on Thursdays 11-noon
 The camp will be open to all of NCATS (trainees and staff)
-The commitment would be 1 hour in-person time per week for 8 weeks, plus perhaps slacking back and forth.
+The commitment would be 1 hour in-person time per week for 8 weeks, plus ad hoc slacking back and forth.
 There will be two introductory lectures: 1) introducing what the camp is about so folks can decide on whether or not to join; 2) introducing the course organization and use of GitHub, and definition of projects.
 At the end of the 8 weeks, everyone will share the results of their project (e.g. 15 min talk)
 The camp will be capped to 20 participants
