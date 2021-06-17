@@ -23,7 +23,7 @@ Each participant will be choosing a teaching assistant (TA) to work with for the
 5. Trung Nguyen (R, Python, or other)
 6. Kyle Spencer (R/Rstudio, RShiny)
 7. Tongan Zhao (Python, Java)
-8. Mark Williams (Any)
+8. Mark Williams (Python, Java, Perl)
 
 For more information on the projects offered by each TA, click [here](https://docs.google.com/document/d/1TrKt8btT9JP0UT2jjnN2T41peH0wSOP09Kgsr97kk0o/edit#heading=h.rkpw27ucmawr). 
 
