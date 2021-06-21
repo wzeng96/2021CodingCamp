@@ -36,5 +36,13 @@ Our Slack Channel is on the NCATS instance and is called: 2021_summercodingcamp
 
 Instructions on how to communicate via GitHub and Slack will be provided in the introductory lectures.
 
+## High-level timeline:
+- Week1 (Monday): Introduction
+- Week 2: Select project, get set up on GitHub/Slack, start a timeline for your project
+- Week 3: Set up your environment to complete project, finalize timeline, work on your first task
+- Weeks 4-6: Keep working on tasks, revise timeline as appropriate
+- Week 7: Prep your final presentation for last week, maybe start presentations that week
+- Week 8: Final project presentation
+
 ## Questions/Concerns?
 Please contact Ewy at ewy.mathe@nih.gov.
