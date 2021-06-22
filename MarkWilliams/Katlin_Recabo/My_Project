@@ -1,0 +1,4 @@
+Parse an email
+Compare parsed strings to existing data in SQL Database
+Determine whether to change or add information to this database based on comparison
+If time allows, create API?
