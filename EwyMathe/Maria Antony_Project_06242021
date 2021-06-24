@@ -1,0 +1,3 @@
+Review database--https://physionet.org/content/inipdmsa/1.0/; it is an open access dataset comprised of 16 patient enrolled in a double blind RCT for intranasal insulin in Parkinson's D
+Measures of interest in MOCA (validated cognitive scoring system) and verbal fluency, as well as lab values (A1c, BG)--would like to utilize R for data visualization and statistics 
+Compare treatment vs. no treatment and MDS vs. Parkinsons 
