@@ -1,1 +1,1 @@
-I don't have much experience in coding so I haven't figured out the specifics yet, but generally I want to make a code that can read a given DNA sequence and detect the types of genes and how many there are in the sequence.
+I don't have much experience in coding so I haven't figured out the specifics yet, but generally I want to make a code that can process files that store DNA sequences, convert the sequence to numerical values so they can be used to train learning models, and train a machine learning model to make predictions about any given DNA sequence.
