@@ -1,0 +1,77 @@
+#load mixOmics package
+library(mixOmics)
+
+#load datalist
+data("breast.TCGA")
+
+#extract training data and name each data frame
+
+X <- list(mRNA = breast.TCGA$data.train$mrna, miRNA = breast.TCGA$data.train$mirna, protein = breast.TCGA$data.train$protein)
+
+Y <- breast.TCGA$data.train$subtype
+
+summary(Y)
+
+
+#Setting an arbitrary number of variables to keep in each data set and each component
+list.keepX <- list(mRNA = c(16, 17), miRNA = c(18, 5), protein = c(5, 5))
+
+#Minimal multiomics signature
+MyResult.diablo <- block.splsda(X, Y, keepX = list.keepX)
+#sampleplot
+png(filename = "MyResultDiabloSamplePlot.png", width = 4200, height = 4200, res = 300)
+plotIndiv(MyResult.diablo)
+dev.off()
+
+#variable plot
+png(filename = "MyResultDiabloVariablePlot.png", width = 4200, height = 4200, res = 300)
+plotVar(MyResult.diablo)
+dev.off()
+
+
+#non-spares multi-omics signature
+MyResult.diablo2 <- block.plsda(X, Y)
+
+#sampleplot non-sparse
+png(filename = "MyResultDiabloSamplePlot2.png", width = 4200, height = 4200, res = 300)
+plotIndiv(MyResult.diablo2)
+dev.off()
+
+#variable plot non-sparse
+png(filename = "MyResultDiabloVariablePlot2.png", width = 4200, height = 4200, res = 300)
+plotVar(MyResult.diablo2)
+dev.off()
+
+
+#improved plot
+png(filename = "MyResultDiabloindividualPlot.png", width = 4200, height = 4200, res = 300)
+plotIndiv(MyResult.diablo, ind.names = FALSE, legend = TRUE, cex = c(1,2,3), title = 'BRCA with DIABLO')
+dev.off()
+
+#plot correlation structure
+png(filename = "MyResultDiabloCorrelationPlot.png", width = 4200, height = 4200, res = 300)
+plotDiablo(MyResult.diablo, ncomp = 1)
+dev.off()
+
+#similarity score plot cutoff
+png(filename = "MyResultDiablocircosPlot.png", width = 4200, height = 4200, res = 300)
+circosPlot(MyResult.diablo, cutoff = 0.7)
+dev.off()
+
+#similarity score plot cutoff
+png(filename = "MyResultDiablocircosPlot.png", width = 4200, height = 4200, res = 300)
+circosPlot(MyResult.diablo2, cutoff = 0.7)
+dev.off()
+
+#heatmap
+png(filename = "MyResultDiabloheatmapPlot.png", width = 4200, height = 4200, res = 300)
+cimDiablo(MyResult.diablo, color.blocks = c('darkorchid', 'brown1', 'lightgreen'), comp = 1, margins = c(8,20), legend.position = "right")
+dev.off()
+
+#network
+png(filename = "MyResultDiabloNetworkPlot.png", width = 4200, height = 4200, res = 300)
+network(MyResult.diablo, blocks = c(1,2,3), color.node = c('darkorchid', 'brown1', 'lightgreen'), cutoff = 0.6)
+dev.off()
+
+
+
