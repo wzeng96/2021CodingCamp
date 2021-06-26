@@ -1,0 +1,258 @@
+library(edgeR)
+library(Rcpp)
+library(BiocManager)
+library(BiocParallel)
+library(org.Hs.eg.db)
+library(ggplot2)
+library(GO.db)
+library(BiocGenerics)
+library(cowplot)
+library(DO.db)
+library(DOSE)
+library(genefilter)
+library(geneplotter)
+library(ggforce)
+library(ggupset)
+library(gplots)
+library(ggplot2)
+library(ggrepel)
+library(clusterProfiler)
+library(GOSemSim)
+library(GO.db)
+library(pathview)
+library(cluster)
+library(enrichplot)
+
+#check working directory
+getwd()
+
+#read in raw counts
+counts <- read.csv("raw_counts.csv", header = TRUE, row.names = 1)
+#inspect
+head(counts)
+#inspect again
+dim(counts)
+
+#create DGElist object
+dO <- DGEList(counts)
+
+
+#preprocessing, calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream
+dO <- calcNormFactors(dO)
+#inspect normalization
+dO
+
+#filter low count genes
+cutoff <- 1
+drop <- which(apply(cpm(dO), 1, max) < cutoff)
+d <- dO[-drop,] 
+dim(d)
+
+
+#group samples
+design.mat <- cbind(c(1,1,1,0,0,0), c(0,0,0,1,1,1))
+colnames(design.mat) <- c("WT","NGLY1")
+
+design.mat
+#define contrasts
+contrast.mat <- matrix (c(1,-1), ncol = 1)
+dimnames(contrast.mat) <- list(c('WT', 'NGLY1'), "Diff")
+contrast.mat
+
+contrast.mat <- makeContrasts(Diff = NGLY1 - WT, levels = design.mat)
+
+contrast.mat
+
+#inspect data (multidimensional scaling)
+png(filename = "MDS_limmaVoom.png", width = 4200, height = 4200, res = 300)
+plotMDS(d, col = as.numeric(design.mat))
+dev.off()
+
+#Second MDS
+png(filename = "MDS_limmaVoom_default.png", width = 4200, height = 4200, res = 300)
+plotMDS.default(d, top = 500, labels = NULL, pch = NULL, cex = 1, dim.plot = c(1,2))
+dev.off()
+
+#PCA Analysis
+png(filename = "PCA_limmaVoom.png", width = 2200, height = 2200, res = 300)
+plotMDS(d, gene.selection = "common")
+dev.off()
+
+#model the data variances
+mm <- model.matrix(~0 + design.mat)
+
+#inspect the mean variance trend to ensure filtering was acceptable
+png(filename = "Limma_Variance_Trend.png", width = 4200, height = 4200, res = 300)
+y <- voom(d, mm, plot = T)
+dev.off()
+
+
+#lmFit fits a linear model using weighted least squares for each gene:
+fit <- lmFit(y, mm)
+head(coef(fit))
+fit2 <- contrasts.fit(fit, contrast.mat)
+fit3 <- eBayes(fit2)
+
+#calculate differentially expressed genes abs(LFC) > 2, padj < 0.05
+deg <- topTable(fit3, coef = 'Diff', p.value = 0.05, adjust.method = 'fdr', lfc = log2(2), number = nrow(counts))
+
+#calculate data for all genes
+deg2 <- topTable(fit3, coef = 'Diff', adjust.method = "fdr", sort = "none", number = nrow(counts))
+
+dim(deg)[1]
+
+
+#raw count data uses ENSEMBL gene names
+write.csv(deg, file = "Limma_NGLY1_NSC_592B_WT_Test.csv")
+
+write.csv(deg2, file = "limma_NGLY1_NSC_592B_WT_all.csv")
+
+#convert ENSEMBL ID into gene SYMBOL
+#load human gene database
+organism = "org.Hs.eg.db"
+library(organism, character.only = TRUE)
+
+dfAll = read.csv("limma_NGLY1_NSC_592B_WT_all.csv", header = TRUE)
+genes <- dfAll$X
+ids <- bitr(genes, fromType="ENSEMBL", toType="SYMBOL", OrgDb="org.Hs.eg.db")
+
+#change column names to merge
+colnames(dfAll)
+names(dfAll)[names(dfAll) == "X"] <- "ENSEMBL"
+#check that it worked
+colnames(dfAll)
+
+#check column names of conversion file
+colnames(ids)
+#write file with ENSEMBL to SYMBOL
+write.csv(ids, file = "ENSEMBL_to_SYMBOL_all.csv")
+
+#load dataframes to merge IDS
+
+dfID <- ids
+
+colnames(dfID)
+
+ENSEMBL_SYMBOL_all <- merge(dfAll, dfID, by = "ENSEMBL")
+
+write.csv(ENSEMBL_SYMBOL_all, "limma_NGLY1_NSC_592B_WT_SYMBOL_all.csv")
+
+#convert significant genes only
+dfSig = read.csv("Limma_NGLY1_NSC_592B_WT_Test.csv", header = TRUE)
+genes <- dfSig$X
+ids_sig <- bitr(genes, fromType="ENSEMBL", toType="SYMBOL", OrgDb="org.Hs.eg.db")
+
+#change column names to merge
+colnames(dfSig)
+names(dfSig)[names(dfSig) == "X"] <- "ENSEMBL"
+#check that it worked
+colnames(dfSig)
+
+#write file with ENSEMBL to SYMBOL
+write.csv(ids, file = "ENSEMBL_to_SYMBOL_Sig.csv")
+
+#load dataframes to merge IDS
+
+dfID2 <- ids_sig
+
+ENSEMBL_SYMBOL_Sig <- merge(dfAll, dfID2, by = "ENSEMBL")
+
+write.csv(ENSEMBL_SYMBOL_Sig, "limma_NGLY1_NSC_592B_WT_SYMBOL_Sig.csv")
+
+
+#Perform GSEA Analaysis on limma Voom data
+organism = "org.Hs.eg.db"
+library(organism, character.only = TRUE)
+
+#load data from all genes
+df = read.csv("limma_NGLY1_NSC_592B_WT_SYMBOL_all.csv", header = TRUE)
+
+#sort list by log Fold Change
+original_genelist <- df$logFC
+
+#gene list names are classified by gene symbols
+names(original_genelist) <- df$SYMBOL
+
+#omit missing values
+gene_list <-na.omit(original_genelist)
+
+#sort genes by log fold change in descending order
+gene_list = sort(gene_list, decreasing = TRUE)
+
+#load a bunch of gene sets to use for GSEA
+df2 = read.gmt("TFGTRD.gmt")
+
+TFGTRD = df2
+
+df1 = read.csv("Bioplanet_Enricher.csv", header = TRUE)
+
+BP = df1
+
+df3 = read.gmt("hallmark.gmt")
+
+hallmark = df3
+
+df4 = read.gmt("FDA_approved.gmt")
+
+FDA = df4
+
+df5 = read.gmt("legacy.gmt")
+
+legacy = df5
+
+df6 = read.gmt("CGP.gmt")
+
+CGP = df6
+
+gse <- GSEA(gene_list, minGSSize = 5, maxGSSize = 1000, eps = 0.0, pvalueCutoff = 0.25, pAdjustMethod = "BH", TERM2GENE = BP, verbose = TRUE)
+
+write.csv(gse, "NCATS_Bioplanet_GSEA.csv")
+
+png(filename = "NCATS_Bioplanet_GSEA.png", width = 4200, height = 2200, res = 300)
+ridgeplot(gse, showCategory = 30) + labs(x = "enrichment distribution")
+dev.off()
+
+gse2 <- GSEA(gene_list, minGSSize = 5, maxGSSize = 1000, eps = 0, pvalueCutoff = 0.05, pAdjustMethod = "BH", TERM2GENE = TFGTRD, verbose = TRUE)
+
+write.csv(gse2, "TFGTRD_GSEA.csv")
+
+png(filename = "TFGTRD_GSEA.png", width = 4200, height = 2200, res = 300)
+ridgeplot(gse2, showCategory = 30) + labs(x = "enrichment distribution")
+dev.off()
+
+gse3 <- GSEA(gene_list, minGSSize = 5, maxGSSize = 1000, eps = 0, pvalueCutoff = 0.9999, pAdjustMethod = "BH", TERM2GENE = hallmark, verbose = TRUE)
+
+write.csv(gse3, "Hallmark_GSEA.csv")
+
+png(filename = "Hallmark_GSEA.png", width = 4200, height = 2200, res = 300)
+ridgeplot(gse3, showCategory = 30) + labs(x = "enrichment distribution")
+dev.off()
+
+gse4 <- GSEA(gene_list, minGSSize = 5, maxGSSize = 1000, eps = 0, pvalueCutoff = 0.10, pAdjustMethod = "BH", TERM2GENE = FDA, verbose = TRUE)
+
+write.csv(gse4, "FDA_Drug_Signature_GSEA.csv")
+
+png(filename = "FDA_Drug_Signature_GSEA", width = 4200, height = 2200, res = 300)
+ridgeplot(gse4, showCategory = 30) + labs(x = "enrichment distribution")
+dev.off()
+
+
+gse5 <- GSEA(gene_list, minGSSize = 5, maxGSSize = 1000, eps = 0, pvalueCutoff = 0.10, pAdjustMethod = "BH", TERM2GENE = legacy, verbose = TRUE)
+
+write.csv(gse5, "Legacy_GSEA.csv")
+
+png(filename = "Legacy_GSEA.png", width = 4200, height = 2200, res = 300)
+ridgeplot(gse5, showCategory = 30) + labs(x = "enrichment distribution")
+dev.off()
+
+
+gse6 <- GSEA(gene_list, minGSSize = 5, maxGSSize = 1000, eps = 0, pvalueCutoff = 0.10, pAdjustMethod = "BH", TERM2GENE = CGP, verbose = TRUE)
+
+write.csv(gse6, "CGP_GSEA.csv")
+
+png(filename = "CGP_GSEA.csv.png", width = 4200, height = 2200, res = 300)
+ridgeplot(gse6, showCategory = 30) + labs(x = "enrichment distribution")
+dev.off()
+
+
+
