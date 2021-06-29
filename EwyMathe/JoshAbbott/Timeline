@@ -1,0 +1,5 @@
+#1 Rework existing code to analyze RNA-seq data using edgeR and limma-voom, integrate code with GSEA and GO analysis code (done)
+#2 Explore multi-omics integration software. So far using mixOmics, package installed, code is working based on reproducing tutorial examples (done)
+#waiting on Drugbank approval to incorporate druggable targets and compounds into my analysis for drug repurposing
+#3 Integrate existing RNA-seq and proteomics data for analysis for mixOmics (in process)
+#4 Need to further understand the stats and outputs of mixOmics analysis for useful application and define a multiomic signature. Using data from neural stem cells, neurons, and midbrain organoids
