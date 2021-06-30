@@ -1,0 +1,5 @@
+Get a colorful image
+2. Check that the image has a depth of three (so 3 channels: RGB) (should be a png imge) -- by taking the shape of image.  print(img.shape)
+3. Copy and paste code.
+4. Run code with the png file
+5. Work through errors (edited) 
