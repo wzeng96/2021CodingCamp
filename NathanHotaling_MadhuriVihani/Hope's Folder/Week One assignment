@@ -3,3 +3,20 @@ Get a colorful image
 3. Copy and paste code.
 4. Run code with the png file
 5. Work through errors (edited) 
+
+Separate out png image into RGB channels python
+
+img = Image.open('ra.jpg')
+data = img.getdata()
+
+# Suppress specific bands (e.g. (255, 120, 65) -> (0, 120, 0) for g)
+r = [(d[0], 0, 0) for d in data]
+g = [(0, d[1], 0) for d in data]
+b = [(0, 0, d[2]) for d in data]
+
+img.putdata(r)
+img.save('r.png')
+img.putdata(g)
+img.save('g.png')
+img.putdata(b)
+img.save('b.png')
