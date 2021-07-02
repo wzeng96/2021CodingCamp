@@ -20,8 +20,12 @@ with cx_Oracle.connect(user="coma", password="nihncgc", dsn="oradev05.ncats.nih.
     for row in tables:
         print(row)
 
-#preparing empty table
+#preparing FOTS_COMPOUNDS_df table
 FOTS_COMPOUNDS_df = pd.DataFrame(columns=['FOTS','NCGC'])
+row = 0
+
+#preparing FOTS_BAR_df table
+FOTS_BAR_df = pd.DataFrame(columns=['FOTS','NCGC','Barcode', 'Volume (uL)'])
 row = 0
 
 #Establishing connection
