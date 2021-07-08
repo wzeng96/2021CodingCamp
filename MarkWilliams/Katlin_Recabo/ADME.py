@@ -16,16 +16,17 @@ with cx_Oracle.connect(user="coma", password="nihncgc", dsn="oradev05.ncats.nih.
         f'ORDER BY ' +
         f'  table_name'
     )
+
     for row in tables:
         print(row)
 
-#Preparing empty FOTS_COMPOUNDS_df table
+#preparing empty table
 FOTS_COMPOUNDS_df = pd.DataFrame(columns=['FOTS','NCGC'])
-row = 0
+comp_row = 0
 
-#preparing empty FOTS_BAR_df table
-FOTS_BAR_df = pd.DataFrame(columns=['NCGC','Barcode', 'Volume (uL)'])
-row = 0
+#preparing empty table
+FOTS_BAR_df = pd.DataFrame(columns=['Requested','NCGC','Barcode', 'Volume (uL)'])
+bar_row = 0
 
 #Establishing connection
 connection = cx_Oracle.connect(user="coma", password="nihncgc",
@@ -34,7 +35,7 @@ connection = cx_Oracle.connect(user="coma", password="nihncgc",
 #Finding all of the compounds associated with unfinished ADME orders
 orders_cursor = connection.cursor()
 orders = orders_cursor.execute(
-    f"select ORDERID, SAMPLE_ID " +
+    f"select ORDERID, SAMPLE_ID, DELIVERY_FORMAT, DELIVER_TO, PROJECT " +
     f"from COMA_ORDER_V2 cross join COMPOUNDS " +
     f"where COMA_ORDER_V2.ORDERID=COMPOUNDS.ORDER_ID and COMA_ORDER_V2.STATUS= 'IN PROGRESS' and COMA_ORDER_V2.ORDERTYPE=6 " +
     f"order by ORDER_ID")
@@ -47,29 +48,29 @@ for order_row in orders:
     format_id = order_row [2]
     chem_id = order_row [3]
     project_id = order_row [4]
-#    print(f"{order}: {compounds}")
-#Filling FOTS_COMPOUNDS_df
+    #    print(f"{order}: {compounds}")
     FOTS_COMPOUNDS_df.loc[comp_row] = [order, compounds]
     comp_row += 1
     length = len(compounds)
-#    print(compounds,":", length)
+    #    print(compounds,":", length)
     no_batch = compounds[0:12]
 
 
-#Finding the Delivery format name
+    #Finding the Delivery format name
     del_forms_cursor = connection.cursor()
     del_forms = del_forms_cursor.execute(
         f"select PLATE_FORMAT, ORDER_TYPE2, MINIMUM_VOLUME " +
         f"from DELIVERY_FORMAT " +
         f"where ID = '{format_id}' "
     )
+
     for del_forms_row in del_forms:
         del_form = del_forms_row [0]
         order_type = del_forms_row [1]
         min_vol = del_forms_row [2]
 
-#Finding the barcodes associated with the compounds listed
-#If the compound doesn't have a batch listed
+    #Finding the barcodes associated with the compounds listed
+    #If the compound doesn't have a batch listed
     if length == 12:
         bar_count = 0
         barcodes_cursor = connection.cursor()
@@ -82,7 +83,7 @@ for order_row in orders:
             f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc "
         )
 
-#If it does have a batch listed, check how many instances of the requested batch have more than minimum volume
+    #If it does have a batch listed, check how many instances of the requested batch have more than minimum volume
     else:
         search_cursor = connection.cursor()
         search = search_cursor.execute(
@@ -96,7 +97,7 @@ for order_row in orders:
         for search_row in search:
             bar_count += 1
 
-#If the requested batch does not exist with more than minimum volume
+        #If the requested batch does not exist with more than minimum volume
         if bar_count == 0:
             barcodes_cursor = connection.cursor()
             barcodes = barcodes_cursor.execute(
@@ -108,7 +109,7 @@ for order_row in orders:
                 f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc "
             )
 
-#If the requested batch exists with more than minimum volume
+        #If the requested batch exists with more than minimum volume
         else:
             barcodes_cursor = connection.cursor()
             barcodes = barcodes_cursor.execute(
@@ -119,13 +120,12 @@ for order_row in orders:
                 f"and BARCODE_VOLUME.AMOUNT >= '{min_vol}' " +
                 f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc "
             )
-#Establishing variables
     for barcode_row in barcodes:
-#        print(barcode_row)
+        #        print(barcode_row)
         batch = barcode_row [0]
         barcode = barcode_row [1]
         vol = barcode_row [2]
-#        print(f"{batch}: {barcode}: {vol}")
+        #        print(f"{batch}: {barcode}: {vol}")
         FOTS_BAR_df.loc[bar_row] = [compounds, batch, barcode, vol]
         bar_row += 1
         print(f"{order}: {compounds}: {batch}: {barcode}")
