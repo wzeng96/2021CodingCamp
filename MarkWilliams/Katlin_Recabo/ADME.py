@@ -75,13 +75,14 @@ for order_row in orders:
         bar_count = 0
         barcodes_cursor = connection.cursor()
         barcodes = barcodes_cursor.execute(
-            f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT" +
+            f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT " +
             f"from BARCODE_INFO cross join BARCODE_VOLUME " +
             f"where BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
             f"and BARCODE_INFO.NCGCROOT = '{compounds}' " +
             f"and BARCODE_VOLUME.AMOUNT >= '{min_vol}' " +
-            f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc "
-        )
+            f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
+            f"fetch first 1 row only"
+            )
 
     #If it does have a batch listed, check how many instances of the requested batch have more than minimum volume
     else:
@@ -106,7 +107,8 @@ for order_row in orders:
                 f"where BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
                 f"and BARCODE_INFO.NCGCROOT = '{no_batch}' " +
                 f"and BARCODE_VOLUME.AMOUNT >= '{min_vol}' " +
-                f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc "
+                f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc "+
+                f"fetch first 1 row only"
             )
 
         #If the requested batch exists with more than minimum volume
@@ -118,7 +120,8 @@ for order_row in orders:
                 f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
                 f"where BARCODE_INFO.SAMPLE_ID = '{compounds}' " +
                 f"and BARCODE_VOLUME.AMOUNT >= '{min_vol}' " +
-                f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc "
+                f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
+                f"fetch first 1 row only"
             )
     for barcode_row in barcodes:
         #        print(barcode_row)
@@ -128,8 +131,8 @@ for order_row in orders:
         #        print(f"{batch}: {barcode}: {vol}")
         FOTS_BAR_df.loc[bar_row] = [compounds, batch, barcode, vol]
         bar_row += 1
-        print(f"{order}: {compounds}: {batch}: {barcode}")
+#        print(f"{order}: {compounds}: {batch}: {barcode}")
 
 
 #FOTS_COMPOUNDS_df
-#FOTS_BAR_df
+print(FOTS_BAR_df)
