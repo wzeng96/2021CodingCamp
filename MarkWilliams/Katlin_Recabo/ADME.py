@@ -17,16 +17,20 @@ with cx_Oracle.connect(user="coma", password="nihncgc", dsn="oradev05.ncats.nih.
         f'  table_name'
     )
 
-    for row in tables:
-        print(row)
+#    for row in tables:
+#        print(row)
 
-#preparing empty table
+#preparing empty FOTS_COMPOUNDS_df table
 FOTS_COMPOUNDS_df = pd.DataFrame(columns=['FOTS','NCGC'])
 comp_row = 0
 
-#preparing empty table
+#preparing empty FOTS_BAR_df table
 FOTS_BAR_df = pd.DataFrame(columns=['Requested','NCGC','Barcode', 'Volume (uL)'])
 bar_row = 0
+
+#preparing empty ADME_df table
+ADME_df = pd.DataFrame(columns=['Barcode', 'NCGC', 'Chemist', 'Project', 'Concentration','Volume', 'Format'])
+ADME_row = 0
 
 #Establishing connection
 connection = cx_Oracle.connect(user="coma", password="nihncgc",
@@ -35,7 +39,7 @@ connection = cx_Oracle.connect(user="coma", password="nihncgc",
 #Finding all of the compounds associated with unfinished ADME orders
 orders_cursor = connection.cursor()
 orders = orders_cursor.execute(
-    f"select ORDERID, SAMPLE_ID, DELIVERY_FORMAT, DELIVER_TO, PROJECT " +
+    f"select ORDERID, SAMPLE_ID, DELIVERY_FORMAT, DELIVER_TO, PROJECT_ID " +
     f"from COMA_ORDER_V2 cross join COMPOUNDS " +
     f"where COMA_ORDER_V2.ORDERID=COMPOUNDS.ORDER_ID and COMA_ORDER_V2.STATUS= 'IN PROGRESS' and COMA_ORDER_V2.ORDERTYPE=6 " +
     f"order by ORDER_ID")
@@ -74,16 +78,18 @@ for order_row in orders:
     if length == 12:
         bar_count = 0
         barcodes_cursor = connection.cursor()
-        barcodes = barcodes_cursor.execute(
-            f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT " +
-            f"from BARCODE_INFO cross join BARCODE_VOLUME " +
-            f"where BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
-            f"and BARCODE_INFO.NCGCROOT = '{compounds}' " +
-            f"and BARCODE_VOLUME.AMOUNT >= '{min_vol}' " +
-            f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
-            f"fetch first 1 row only"
+        try:
+            barcodes = barcodes_cursor.execute(
+                f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION " +
+                f"from BARCODE_INFO cross join BARCODE_VOLUME " +
+                f"where BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
+                f"and BARCODE_INFO.NCGCROOT = '{compounds}' " +
+                f"and BARCODE_VOLUME.AMOUNT >= '{min_vol}' " +
+                f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
+                f"fetch first 1 row only"
             )
-
+        except:
+            print(f"error: {compounds}:{min_vol}")
     #If it does have a batch listed, check how many instances of the requested batch have more than minimum volume
     else:
         search_cursor = connection.cursor()
@@ -102,12 +108,12 @@ for order_row in orders:
         if bar_count == 0:
             barcodes_cursor = connection.cursor()
             barcodes = barcodes_cursor.execute(
-                f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT " +
+                f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION " +
                 f"from BARCODE_INFO cross join BARCODE_VOLUME " +
                 f"where BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
                 f"and BARCODE_INFO.NCGCROOT = '{no_batch}' " +
                 f"and BARCODE_VOLUME.AMOUNT >= '{min_vol}' " +
-                f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc "+
+                f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
                 f"fetch first 1 row only"
             )
 
@@ -115,7 +121,7 @@ for order_row in orders:
         else:
             barcodes_cursor = connection.cursor()
             barcodes = barcodes_cursor.execute(
-                f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT " +
+                f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION " +
                 f"from BARCODE_INFO join BARCODE_VOLUME " +
                 f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
                 f"where BARCODE_INFO.SAMPLE_ID = '{compounds}' " +
@@ -128,11 +134,51 @@ for order_row in orders:
         batch = barcode_row [0]
         barcode = barcode_row [1]
         vol = barcode_row [2]
+        conc = barcode_row [3]
         #        print(f"{batch}: {barcode}: {vol}")
         FOTS_BAR_df.loc[bar_row] = [compounds, batch, barcode, vol]
         bar_row += 1
-#        print(f"{order}: {compounds}: {batch}: {barcode}")
 
+        ADME_df.loc[ADME_row] = [barcode,batch,chem_id,project_id,conc,'in solution', format_id]
+        ADME_row += 1
+ #       print(f"{order}: {compounds}: {batch}: {barcode}")
+        ADME_cursor = connection.cursor()
+        try:
+            ADME = ADME_cursor.execute(
+                f"insert into ADME " +
+                f"values ('{barcode}','{batch}','{chem_id}','{project_id}','{conc}','in solution', DEFAULT, '{format_id}', DEFAULT) "
+            )
+        except:
+            print(f"Error: values ('{barcode}','{batch}','{chem_id}','{project_id}','{conc}','in solution', '{format_id}') ")
 
-#FOTS_COMPOUNDS_df
-print(FOTS_BAR_df)
+connection.commit()
+#print(FOTS_COMPOUNDS_df)
+#print(FOTS_BAR_df)
+#print(ADME_df)
+
+#Setting order to complete
+FOTS_cursor = connection.cursor()
+FOTS = FOTS_cursor.execute(
+    f"select COMA_ORDER_V2.ORDERID, DELIVERY_FORMAT.PLATE_FORMAT " +
+    f"from COMA_ORDER_V2 join DELIVERY_FORMAT " +
+    f"on COMA_ORDER_V2.DELIVERY_FORMAT=DELIVERY_FORMAT.ID " +
+    f"where COMA_ORDER_V2.STATUS= 'IN PROGRESS' and COMA_ORDER_V2.ORDERTYPE=6 " +
+    f"order by COMA_ORDER_V2.ORDERID"
+)
+
+for FOTS_row in FOTS:
+    print(FOTS_row)
+    FOTSNo = FOTS_row [0]
+    order_type = FOTS_row [1]
+    fin_com = "These compounds have been added to the " + order_type + "queue."
+    completes_cursor = connection.cursor()
+    try:
+        completes = completes_cursor.execute(
+            f"update COMA_ORDER_V2 " +
+            f"set SEND_EMAIL = SYSDATE, FINAL_TABLE = '{ADME_df}', FINAL_COMMENTS = '{fin_com}', CONTACT = 'recabokm', COMA_CONTACT = 'Katlin Recabo' " +
+            f"where ORDERID = '{FOTSNo}'"
+        )
+    except:
+        print("These compounds have been added to the " + order_type + "queue.")
+
+connection.commit()
