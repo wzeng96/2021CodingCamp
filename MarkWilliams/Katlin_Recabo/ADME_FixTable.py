@@ -34,7 +34,7 @@ for FOTS_row in FOTS:
     f"where ORDER_ID = '{FOTSNo}' " +
     f"order by ORDER_ID"
     )
-
+    comp_list = "NCGC ID"
     #Finding the barcodes for each of the compounds
     for compounds_row in compounds:
         compound = compounds_row [1]
