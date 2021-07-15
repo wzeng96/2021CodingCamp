@@ -98,15 +98,12 @@ for FOTS_row in FOTS:
                 )
 
         for barcode_row in barcodes:
-            #        print(barcode_row)
             batch = barcode_row [0]
             barcode = barcode_row [1]
             vol = barcode_row [2]
             conc = barcode_row [3]
-            #        print(f"{batch}: {barcode}: {vol}")
 
             #Adding the compounds to the ADME queue
-            #       print(f"{order}: {compounds}: {batch}: {barcode}")
             ADME_cursor = connection.cursor()
             try:
                 ADME = ADME_cursor.execute(
@@ -115,5 +112,18 @@ for FOTS_row in FOTS:
                 )
             except:
                 print(f"Error: values ('{barcode}','{batch}','{chem_id}','{project_id}','{conc}','in solution', '{format_id}') ")
+
+#Sets the send_email to today and inserts the compound list and final comments
+    completes_cursor = connection.cursor()
+    try:
+        completes = completes_cursor.execute(
+            f"update COMA_ORDER_V2 " +
+            f"set SEND_EMAIL = SYSDATE, FINAL_TABLE = '{comp_list}', FINAL_COMMENTS = '{fin_com}', CONTACT = 'recabokm', COMA_CONTACT = 'Katlin Recabo' " +
+            f"where ORDERID = '{FOTSNo}'"
+        )
+    except:
+        print("These compounds have been added to the " + order_type + "queue.")
+
+connection.commit()
 
 
