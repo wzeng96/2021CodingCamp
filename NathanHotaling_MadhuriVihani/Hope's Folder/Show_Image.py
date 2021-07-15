@@ -7,3 +7,5 @@ print(type(img))
 print(img.dtype)
 plt.imshow(img)
 plt.show()
+
+# adding random sentence round 2ß
