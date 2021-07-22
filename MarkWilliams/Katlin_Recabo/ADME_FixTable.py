@@ -17,22 +17,22 @@ FOTS = FOTS_cursor.execute(
 )
 
 for FOTS_row in FOTS:
-    print(FOTS_row)
+    #print(FOTS_row)
     FOTSNo = FOTS_row [0]
     order_type = FOTS_row [1]
     format_id = FOTS_row [2]
     chem_id = FOTS_row [3]
     project_id = FOTS_row [4]
     min_vol = FOTS_row [5]
-    fin_com = "These compounds have been added to the " + order_type + "queue."
+    fin_com = "These have been added to the " + order_type + "queue."
 
     #Finding all of the compounds associated with each unfinished ADME order
     compounds_cursor = connection.cursor()
     compounds = compounds_cursor.execute(
-    f"select ORDER_ID, SAMPLE_ID " +
-    f"from COMPOUNDS " +
-    f"where ORDER_ID = '{FOTSNo}' " +
-    f"order by ORDER_ID"
+        f"select ORDER_ID, SAMPLE_ID " +
+        f"from COMPOUNDS " +
+        f"where ORDER_ID = '{FOTSNo}' " +
+        f"order by ORDER_ID"
     )
     comp_list = "NCGC ID"
     #Finding the barcodes for each of the compounds
@@ -40,32 +40,33 @@ for FOTS_row in FOTS:
         compound = compounds_row [1]
         length = len(compound)
         no_batch = compound[0:12]
+
         #Finding the barcodes associated with the compounds listed
-    #If the compound doesn't have a batch listed
+        #If the compound doesn't have a batch listed
         if length == 12:
             bar_count = 0
             barcodes_cursor = connection.cursor()
             try:
                 barcodes = barcodes_cursor.execute(
-                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION " +
-                    f"from BARCODE_INFO cross join BARCODE_VOLUME " +
-                    f"where BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
-                    f"and BARCODE_INFO.NCGCROOT = '{compound}' " +
-                    f"and BARCODE_VOLUME.AMOUNT >= '{min_vol}' " +
+                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTE " +
+                    f"from BARCODE_INFO join BARCODE_VOLUME " +
+                    f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
+                    f"where BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
+                    f"or (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_INFO.NOTE like '%Dissolve to%') " +
                     f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
                     f"fetch first 1 row only"
                 )
             except:
                 print(f"error: {compound}:{min_vol}")
-    #If it does have a batch listed, check how many instances of the requested batch have more than minimum volume
+        #If it does have a batch listed, check how many instances of the requested batch have more than minimum volume
         else:
             search_cursor = connection.cursor()
             search = search_cursor.execute(
-                f"select BARCODE_INFO.SAMPLE_ID " +
+                f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.NOTE " +
                 f"from BARCODE_INFO join BARCODE_VOLUME " +
                 f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
-                f"where BARCODE_INFO.SAMPLE_ID = '{compound}' " +
-                f"and BARCODE_VOLUME.AMOUNT >= '{min_vol}' "
+                f"where (BARCODE_INFO.SAMPLE_ID = '{compound}' AND BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
+                f"OR (BARCODE_INFO.SAMPLE_ID = '{compound}' AND BARCODE_INFO.NOTE like '%Dissolve to%') "
             )
             bar_count = 0
             for search_row in search:
@@ -75,11 +76,11 @@ for FOTS_row in FOTS:
             if bar_count == 0:
                 barcodes_cursor = connection.cursor()
                 barcodes = barcodes_cursor.execute(
-                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION " +
-                    f"from BARCODE_INFO cross join BARCODE_VOLUME " +
-                    f"where BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
-                    f"and BARCODE_INFO.NCGCROOT = '{no_batch}' " +
-                    f"and BARCODE_VOLUME.AMOUNT >= '{min_vol}' " +
+                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTE " +
+                    f"from BARCODE_INFO join BARCODE_VOLUME " +
+                    f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
+                    f"where (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
+                    f"or (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_INFO.NOTE like '%Dissolve to%') " +
                     f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
                     f"fetch first 1 row only"
                 )
@@ -88,32 +89,43 @@ for FOTS_row in FOTS:
             else:
                 barcodes_cursor = connection.cursor()
                 barcodes = barcodes_cursor.execute(
-                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION " +
+                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTE " +
                     f"from BARCODE_INFO join BARCODE_VOLUME " +
                     f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
-                    f"where BARCODE_INFO.SAMPLE_ID = '{compound}' " +
-                    f"and BARCODE_VOLUME.AMOUNT >= '{min_vol}' " +
+                    f"where (BARCODE_INFO.SAMPLE_ID = '{compound}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
+                    f"or (BARCODE_INFO.SAMPLE_ID = '{compound}' and BARCODE_INFO.NOTE like '%Dissolve to%')" +
                     f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
                     f"fetch first 1 row only"
                 )
-
         for barcode_row in barcodes:
+            #print(barcode_row)
             batch = barcode_row [0]
             barcode = barcode_row [1]
             vol = barcode_row [2]
             conc = barcode_row [3]
+            note = barcode_row [4]
+            comp_list = comp_list + "\n" + batch
+            #Adding the compounds to the ADME queue is they have volume
+            if vol >= min_vol:
+                ADME_cursor = connection.cursor()
+                try:
+                    ADME = ADME_cursor.execute(
+                        f"insert into ADME " +
+                        f"values ('{barcode}','{batch}','{chem_id}','{project_id}','{conc}','in solution', DEFAULT, '{format_id}', DEFAULT) "
+                    )
+                except:
+                    print(f"Error: values ('{barcode}','{batch}','{chem_id}','{project_id}','{conc}','in solution', '{format_id}') ")
 
-            #Adding the compounds to the ADME queue
-            ADME_cursor = connection.cursor()
-            try:
-                ADME = ADME_cursor.execute(
-                    f"insert into ADME " +
-                    f"values ('{barcode}','{batch}','{chem_id}','{project_id}','{conc}','in solution', DEFAULT, '{format_id}', DEFAULT) "
-                )
-            except:
-                print(f"Error: values ('{barcode}','{batch}','{chem_id}','{project_id}','{conc}','in solution', '{format_id}') ")
-
-#Sets the send_email to today and inserts the compound list and final comments
+            #Adding the compound to the ADME queue if they have to ve dissolved
+            else:
+                ADME_cursor = connection.cursor()
+                try:
+                    ADME = ADME_cursor.execute(
+                        f"insert into ADME " +
+                        f"values ('{barcode}','{batch}','{chem_id}','{project_id}','{conc}','{note}', DEFAULT, '{format_id}', DEFAULT) "
+                    )
+                except:
+                    print(f"Error: values ('{barcode}','{batch}','{chem_id}','{project_id}','{conc}','{note}', '{format_id}') ")
     completes_cursor = connection.cursor()
     try:
         completes = completes_cursor.execute(
@@ -125,5 +137,3 @@ for FOTS_row in FOTS:
         print("These compounds have been added to the " + order_type + "queue.")
 
 connection.commit()
-
-
