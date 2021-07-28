@@ -1,15 +1,17 @@
 import cx_Oracle
+import variables
 
 cx_Oracle.init_oracle_client(lib_dir=r"C:\opt\oracle\instantclient_19_11")
 
 #Establishing connection
-connection = cx_Oracle.connect(user="coma", password="nihncgc",
-                               dsn="oradev05.ncats.nih.gov:1521/bprobedb")
+connection = cx_Oracle.connect(user= variables.USER, password= variables.PASS,
+                               dsn= variables.DSN)
 
 #Finding all in progress ADME FOTS orders
 FOTS_cursor = connection.cursor()
 FOTS = FOTS_cursor.execute(
-    f"select COMA_ORDER_V2.ORDERID, DELIVERY_FORMAT.PLATE_FORMAT, DELIVERY_FORMAT.ID, COMA_ORDER_V2.DELIVER_TO, COMA_ORDER_V2.PROJECT_ID, DELIVERY_FORMAT.MINIMUM_VOLUME " +
+    f"select COMA_ORDER_V2.ORDERID, DELIVERY_FORMAT.PLATE_FORMAT, DELIVERY_FORMAT.ID, " +
+    f"COMA_ORDER_V2.DELIVER_TO, DELIVERY_FORMAT.MINIMUM_VOLUME " +
     f"from COMA_ORDER_V2 join DELIVERY_FORMAT " +
     f"on COMA_ORDER_V2.DELIVERY_FORMAT=DELIVERY_FORMAT.ID " +
     f"where COMA_ORDER_V2.STATUS= 'IN PROGRESS' and COMA_ORDER_V2.ORDERTYPE=6 " +
@@ -22,8 +24,7 @@ for FOTS_row in FOTS:
     order_type = FOTS_row [1]
     format_id = FOTS_row [2]
     chem_id = FOTS_row [3]
-    project_id = FOTS_row [4]
-    min_vol = FOTS_row [5]
+    min_vol = FOTS_row [4]
     fin_com = "These have been added to the " + order_type + "queue."
 
     #Finding all of the compounds associated with each unfinished ADME order
@@ -48,11 +49,12 @@ for FOTS_row in FOTS:
             barcodes_cursor = connection.cursor()
             try:
                 barcodes = barcodes_cursor.execute(
-                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTE " +
+                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, "+
+                    f"BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTES, BARCODE_INFO.PROJECT_ID_FK " +
                     f"from BARCODE_INFO join BARCODE_VOLUME " +
                     f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
-                    f"where BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
-                    f"or (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_INFO.NOTE like '%Dissolve to%') " +
+                    f"where (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
+                    f"or (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.NOTES contains (text, 'Dissolve to', 1) > 0) " +
                     f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
                     f"fetch first 1 row only"
                 )
@@ -76,11 +78,12 @@ for FOTS_row in FOTS:
             if bar_count == 0:
                 barcodes_cursor = connection.cursor()
                 barcodes = barcodes_cursor.execute(
-                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTE " +
+                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, " +
+                    f"BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTES, BARCODE_INFO.PROJECT_ID_FK " +
                     f"from BARCODE_INFO join BARCODE_VOLUME " +
                     f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
                     f"where (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
-                    f"or (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_INFO.NOTE like '%Dissolve to%') " +
+                    f"or (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.NOTES contains (text, 'Dissolve to', 1) > 0) " +
                     f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
                     f"fetch first 1 row only"
                 )
@@ -89,11 +92,11 @@ for FOTS_row in FOTS:
             else:
                 barcodes_cursor = connection.cursor()
                 barcodes = barcodes_cursor.execute(
-                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTE " +
-                    f"from BARCODE_INFO join BARCODE_VOLUME " +
+                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTES " +
+                    f"from BARCODE_INFO join BARCODE_VOLUME, BARCODE_INFO.PROJECT_ID_FK " +
                     f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
                     f"where (BARCODE_INFO.SAMPLE_ID = '{compound}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
-                    f"or (BARCODE_INFO.SAMPLE_ID = '{compound}' and BARCODE_INFO.NOTE like '%Dissolve to%')" +
+                    f"or (BARCODE_INFO.SAMPLE_ID = '{compound}' and BARCODE_VOLUME.NOTES contains (text, 'Dissolve to', 1) > 0)" +
                     f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
                     f"fetch first 1 row only"
                 )
