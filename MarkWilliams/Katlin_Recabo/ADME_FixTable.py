@@ -92,8 +92,9 @@ for FOTS_row in FOTS:
             else:
                 barcodes_cursor = connection.cursor()
                 barcodes = barcodes_cursor.execute(
-                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTES " +
-                    f"from BARCODE_INFO join BARCODE_VOLUME, BARCODE_INFO.PROJECT_ID_FK " +
+                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, " +
+                    f"BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTES, BARCODE_INFO.PROJECT_ID_FK " +
+                    f"from BARCODE_INFO join BARCODE_VOLUME " +
                     f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
                     f"where (BARCODE_INFO.SAMPLE_ID = '{compound}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
                     f"or (BARCODE_INFO.SAMPLE_ID = '{compound}' and BARCODE_VOLUME.NOTES contains (text, 'Dissolve to', 1) > 0)" +
