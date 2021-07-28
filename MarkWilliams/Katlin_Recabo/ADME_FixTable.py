@@ -19,7 +19,6 @@ FOTS = FOTS_cursor.execute(
 )
 
 for FOTS_row in FOTS:
-    #print(FOTS_row)
     FOTSNo = FOTS_row [0]
     order_type = FOTS_row [1]
     format_id = FOTS_row [2]
@@ -49,12 +48,12 @@ for FOTS_row in FOTS:
             barcodes_cursor = connection.cursor()
             try:
                 barcodes = barcodes_cursor.execute(
-                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, "+
-                    f"BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTES, BARCODE_INFO.PROJECT_ID_FK " +
+                    f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, " +
+                    f"BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTE, BARCODE_INFO.PROJECT_ID_FK " +
                     f"from BARCODE_INFO join BARCODE_VOLUME " +
                     f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
-                    f"where (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
-                    f"or (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.NOTES like '%Dissolve to%' " +
+                    f"where BARCODE_INFO.NCGCROOT = '{no_batch}' " +
+                    f"and (BARCODE_VOLUME.AMOUNT >= '{min_vol}') or BARCODE_INFO.NOTE like '%Dissolve to%') " +
                     f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
                     f"fetch first 1 row only"
                 )
@@ -67,8 +66,8 @@ for FOTS_row in FOTS:
                 f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.NOTE " +
                 f"from BARCODE_INFO join BARCODE_VOLUME " +
                 f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
-                f"where (BARCODE_INFO.SAMPLE_ID = '{compound}' AND BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
-                f"OR (BARCODE_INFO.SAMPLE_ID = '{compound}' AND BARCODE_INFO.NOTE like '%Dissolve to%') "
+                f"where BARCODE_INFO.SAMPLE_ID = '{compound}' " +
+                f"and (BARCODE_VOLUME.AMOUNT >= '{min_vol}' or BARCODE_INFO.NOTE like '%Dissolve to%') "
             )
             bar_count = 0
             for search_row in search:
@@ -79,11 +78,11 @@ for FOTS_row in FOTS:
                 barcodes_cursor = connection.cursor()
                 barcodes = barcodes_cursor.execute(
                     f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, " +
-                    f"BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTES, BARCODE_INFO.PROJECT_ID_FK " +
+                    f"BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTE, BARCODE_INFO.PROJECT_ID_FK " +
                     f"from BARCODE_INFO join BARCODE_VOLUME " +
                     f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
-                    f"where (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
-                    f"or (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.NOTES like '%Dissolve to%' " +
+                    f"where BARCODE_INFO.NCGCROOT = '{no_batch}' " +
+                    f"and (BARCODE_VOLUME.AMOUNT >= '{min_vol}' or BARCODE_INFO.NOTE like '%Dissolve to%') " +
                     f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
                     f"fetch first 1 row only"
                 )
@@ -93,11 +92,11 @@ for FOTS_row in FOTS:
                 barcodes_cursor = connection.cursor()
                 barcodes = barcodes_cursor.execute(
                     f"select BARCODE_INFO.SAMPLE_ID, BARCODE_INFO.BARCODE, BARCODE_VOLUME.AMOUNT, " +
-                    f"BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTES, BARCODE_INFO.PROJECT_ID_FK " +
+                    f"BARCODE_INFO.CONCENTRATION, BARCODE_INFO.NOTE, BARCODE_INFO.PROJECT_ID_FK " +
                     f"from BARCODE_INFO join BARCODE_VOLUME " +
                     f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
-                    f"where (BARCODE_INFO.SAMPLE_ID = '{compound}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
-                    f"or (BARCODE_INFO.SAMPLE_ID = '{compound}' and BARCODE_VOLUME.NOTES like '%Dissolve to%' " +
+                    f"where BARCODE_INFO.SAMPLE_ID = '{compound}' " +
+                    f"and (BARCODE_VOLUME.AMOUNT >= '{min_vol}' or BARCODE_INFO.NOTE like '%Dissolve to%')" +
                     f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
                     f"fetch first 1 row only"
                 )
@@ -108,6 +107,7 @@ for FOTS_row in FOTS:
             vol = barcode_row [2]
             conc = barcode_row [3]
             note = barcode_row [4]
+            project_id = barcode_row [5]
             comp_list = comp_list + "\n" + batch
             #Adding the compounds to the ADME queue is they have volume
             if vol >= min_vol:
