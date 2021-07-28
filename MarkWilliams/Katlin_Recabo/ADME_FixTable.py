@@ -54,7 +54,7 @@ for FOTS_row in FOTS:
                     f"from BARCODE_INFO join BARCODE_VOLUME " +
                     f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
                     f"where (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
-                    f"or (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.NOTES contains (text, 'Dissolve to', 1) > 0) " +
+                    f"or (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.NOTES like '%Dissolve to%' " +
                     f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
                     f"fetch first 1 row only"
                 )
@@ -83,7 +83,7 @@ for FOTS_row in FOTS:
                     f"from BARCODE_INFO join BARCODE_VOLUME " +
                     f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
                     f"where (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
-                    f"or (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.NOTES contains (text, 'Dissolve to', 1) > 0) " +
+                    f"or (BARCODE_INFO.NCGCROOT = '{no_batch}' and BARCODE_VOLUME.NOTES like '%Dissolve to%' " +
                     f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
                     f"fetch first 1 row only"
                 )
@@ -97,7 +97,7 @@ for FOTS_row in FOTS:
                     f"from BARCODE_INFO join BARCODE_VOLUME " +
                     f"on BARCODE_INFO.BARCODE = BARCODE_VOLUME.BARCODE " +
                     f"where (BARCODE_INFO.SAMPLE_ID = '{compound}' and BARCODE_VOLUME.AMOUNT >= '{min_vol}') " +
-                    f"or (BARCODE_INFO.SAMPLE_ID = '{compound}' and BARCODE_VOLUME.NOTES contains (text, 'Dissolve to', 1) > 0)" +
+                    f"or (BARCODE_INFO.SAMPLE_ID = '{compound}' and BARCODE_VOLUME.NOTES like '%Dissolve to%' " +
                     f"order by BARCODE_INFO.SAMPLE_ID desc, BARCODE_VOLUME.AMOUNT desc " +
                     f"fetch first 1 row only"
                 )
