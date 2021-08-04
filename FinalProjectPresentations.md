@@ -13,3 +13,6 @@ Chemical Similarity Data Base
 
 William Kariampuzha
 Training BioBERT for Multi-Type Named Entity Recognition
+
+Ainslie Tisdale
+Data Visualizations in R
