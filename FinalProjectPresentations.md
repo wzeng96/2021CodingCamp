@@ -2,3 +2,5 @@
 
 (Please list your Name and title below)
 
+Hope Shapiro
+Manipulating Images with Python
