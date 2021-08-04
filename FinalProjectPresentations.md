@@ -10,3 +10,6 @@ Automating ADME Orders
 
 Deborah Rodriguez
 Chemical Similarity Data Base
+
+William Kariampuzha
+Training BioBERT for Multi-Type Named Entity Recognition
