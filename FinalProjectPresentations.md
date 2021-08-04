@@ -7,3 +7,6 @@ Manipulating Images with Python
 
 Katlin Recabo
 Automating ADME Orders
+
+Deborah Rodriguez
+Chemical Similarity Data Base
