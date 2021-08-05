@@ -16,3 +16,6 @@ Training BioBERT for Multi-Type Named Entity Recognition
 
 Ainslie Tisdale
 Data Visualizations in R
+
+Cole Tindall
+Data Analysis and Visualization in R
