@@ -11,9 +11,6 @@ Automating ADME Orders
 Deborah Rodriguez
 Chemical Similarity Data Base
 
-William Kariampuzha
-Training BioBERT for Multi-Type Named Entity Recognition
-
 Ainslie Tisdale
 Data Visualizations in R
 
@@ -22,3 +19,6 @@ Data Analysis and Visualization in R
 
 Ivan Pavlinov
 Single-cell RNAseq data analysis using the Suerat package in R
+
+William Kariampuzha
+Training BioBERT for Multi-Type Named Entity Recognition
