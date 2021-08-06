@@ -19,3 +19,6 @@ Data Visualizations in R
 
 Cole Tindall
 Data Analysis and Visualization in R
+
+Ivan Pavlinov
+Single-cell RNAseq data analysis using the Suerat package in R
